@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나만의 뉴스 브리핑</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#1e40af;--blue-mid:#2563eb;--blue-light:#3b82f6;--blue-pale:#eff6ff;--blue-border:#bfdbfe;
+  --bg:#eef2f7;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--faint:#94a3b8;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--purple:#7c3aed;
+  --hdr:58px;
+}
+body{font-family:'Malgun Gothic','맑은 고딕',Apple SD Gothic Neo,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+
+/* ── 헤더 ── */
+header{
+  height:var(--hdr);
+  background:linear-gradient(135deg,var(--blue) 0%,var(--blue-mid) 100%);
+  color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 10px rgba(30,64,175,.35);position:relative;z-index:100;
+}
+header h1{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+.hd-sub{font-size:11.5px;opacity:.7;margin-top:1px;}
+.hd-actions{display:flex;gap:6px;}
+.icon-btn{
+  width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,.18);
+  color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.32);}
+
+/* ══ 3열 대시보드 ══ */
+.dash-3col{
+  display:grid;
+  grid-template-columns:1fr 400px 1fr;
+  gap:12px;
+  padding:12px;
+  height:calc(100vh - var(--hdr));
+  overflow:hidden;
+  max-width:1700px;
+  margin:0 auto;
+  width:100%;
+}
+
+/* 각 컬럼이 카드를 꽉 채우도록 */
+.col-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
+
+/* ── 카드 ── */
+.card{
+  background:var(--card);border-radius:13px;
+  box-shadow:0 1px 5px rgba(0,0,0,.08);
+  display:flex;flex-direction:column;
+  overflow:hidden;flex:1;min-height:0;
+}
+.card-hdr{
+  padding:12px 15px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.card-title{font-size:15px;font-weight:700;}
+.card-body{padding:14px;flex:1;overflow-y:auto;}
+
+/* ══ 왼쪽: 카테고리 사이드바 ══ */
+.sidebar-list{flex:1;overflow-y:auto;padding:6px;min-height:0;scrollbar-width:none;}
+.sidebar-list::-webkit-scrollbar{display:none;}
+.si-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 10px;border-radius:9px;cursor:pointer;
+  margin-bottom:2px;transition:all .18s;
+}
+.si-item:hover{background:var(--bg);}
+.si-item.active{background:var(--blue-pale);border-left:3px solid var(--blue-mid);padding-left:7px;}
+.si-left{display:flex;align-items:center;gap:8px;}
+.si-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
+.si-label{font-size:14px;font-weight:700;color:var(--text);}
+.si-item.active .si-label{color:var(--blue-mid);}
+.si-count{
+  font-size:12px;font-weight:800;
+  background:var(--bg);color:var(--muted);
+  border-radius:10px;padding:2px 7px;min-width:24px;text-align:center;
+}
+.si-item.active .si-count{background:var(--blue-mid);color:#fff;}
+.si-divider{height:1px;background:var(--border);margin:6px 4px;}
+
+/* 사이드바 하단 업데이트 정보 */
+.si-footer{
+  flex-shrink:0;padding:10px 14px;
+  border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--faint);
+}
+
+/* ══ 가운데: 뉴스 목록 ══ */
+.news-col-hdr{
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.news-col-title{font-size:15px;font-weight:700;}
+.news-col-sub{font-size:11.5px;color:var(--faint);margin-top:1px;}
+.news-scroll{flex:1;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;}
+
+/* 뉴스 아이템 */
+.news-item{
+  padding:12px 15px;border-bottom:1px solid var(--border);cursor:pointer;
+  transition:background .15s;
+}
+.news-item:hover{background:#f8fafc;}
+.news-item.selected{background:var(--blue-pale);border-left:3px solid var(--blue-mid);padding-left:12px;}
+.news-ttl{font-size:14px;font-weight:600;line-height:1.55;margin-bottom:6px;display:flex;align-items:flex-start;gap:6px;}
+.news-ttl a{color:var(--text);text-decoration:none;flex:1;}
+.news-ttl a:hover{color:var(--blue-mid);text-decoration:underline;}
+.news-ext{font-size:15px;opacity:0;transition:opacity .15s;flex-shrink:0;}
+.news-item:hover .news-ext{opacity:1;}
+.news-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.news-src{font-size:12px;color:var(--blue-mid);font-weight:700;}
+.news-date{font-size:11.5px;color:var(--faint);}
+.news-post-btn{
+  font-size:11.5px;padding:3px 9px;border-radius:6px;
+  border:1.5px solid var(--border);background:#fff;cursor:pointer;
+  color:var(--muted);font-weight:700;transition:all .18s;white-space:nowrap;
+}
+.news-post-btn:hover{border-color:var(--blue-mid);color:var(--blue-mid);background:var(--blue-pale);}
+.badge{font-size:10px;padding:2px 5px;border-radius:4px;font-weight:800;}
+.badge-new{background:#dcfce7;color:#166534;}
+.badge-gov{background:#e0e7ff;color:#3730a3;}
+.badge-labor{background:#fce7f3;color:#9d174d;}
+.badge-gs{background:#d1fae5;color:#065f46;}
+.badge-market{background:#fef9c3;color:#854d0e;}
+
+/* 즐겨찾기 그룹 헤더 */
+.grp-hdr{
+  padding:8px 14px;background:var(--blue-pale);border-bottom:1px solid var(--blue-border);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:800;color:var(--blue);position:sticky;top:0;z-index:1;
+}
+.grp-site-link{
+  font-size:12px;color:var(--blue-mid);text-decoration:none;
+  font-weight:700;padding:3px 8px;border:1px solid var(--blue-border);border-radius:5px;
+}
+.grp-site-link:hover{background:var(--blue-mid);color:#fff;}
+
+/* ══ 중앙 메인: AI 인사이트(상단고정) + 주목뉴스(하단스크롤) ══ */
+.center-inner{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+
+/* AI 인사이트 - 상단 고정 섹션 */
+.insight-top{flex-shrink:0;border-bottom:2px solid var(--border);}
+.insight-top-hdr{
+  padding:12px 15px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,#f0f7ff 0%,#e8f0fe 100%);
+}
+.insight-area{
+  padding:14px 16px;font-size:14px;line-height:1.8;
+  min-height:90px;max-height:240px;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;
+  background:#fafcff;
+}
+
+/* 주목 뉴스 - 하단 스크롤 섹션 */
+.hl-section{display:flex;flex-direction:column;flex:1;min-height:0;}
+.hl-hdr{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:#fff;
+}
+.hl-scroll{flex:1;overflow-y:auto;min-height:0;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;}
+.hl-item{padding:10px 14px;border-bottom:1px solid var(--border);transition:background .15s;}
+.hl-item:hover{background:#f8fafc;}
+.hl-cat{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:9px;display:inline-block;margin-bottom:4px;}
+.hl-title{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:5px;}
+.hl-title a{color:var(--text);text-decoration:none;}
+.hl-title a:hover{color:var(--blue-mid);}
+.hl-meta{font-size:12px;color:var(--faint);display:flex;align-items:center;gap:7px;}
+.hl-post-btn{
+  font-size:11.5px;padding:2px 8px;border-radius:5px;
+  border:1.5px solid var(--border);background:#fff;cursor:pointer;
+  color:var(--muted);font-weight:700;transition:all .18s;
+}
+.hl-post-btn:hover{border-color:var(--blue-mid);color:var(--blue-mid);background:var(--blue-pale);}
+
+/* ══ 우측 보조: 뉴스 목록 ══ */
+.news-col-hdr{
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.news-col-title{font-size:14.5px;font-weight:700;}
+.news-col-sub{font-size:11.5px;color:var(--faint);margin-top:1px;}
+
+/* 인사이트 확장 모드 */
+.center-inner.insight-expanded .insight-top{flex:1;min-height:0;}
+.center-inner.insight-expanded .insight-area{max-height:none;}
+.center-inner.insight-expanded .hl-section{display:none;}
+
+/* ══ 포스팅 뷰 ══ */
+.post-view-wrap{
+  height:calc(100vh - var(--hdr));
+  overflow-y:auto;
+  padding:14px;
+}
+.back-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.back-btn{
+  padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;
+  background:#fff;cursor:pointer;font-size:14px;font-weight:700;color:var(--muted);transition:all .2s;
+}
+.back-btn:hover{border-color:var(--blue-mid);color:var(--blue-mid);}
+.post-grid{display:grid;grid-template-columns:360px 1fr;gap:14px;align-items:start;max-width:1300px;margin:0 auto;}
+@media(max-width:960px){.post-grid{grid-template-columns:1fr;}}
+
+/* 폼 */
+.fg{margin-bottom:11px;}
+.fl{font-size:13.5px;font-weight:700;margin-bottom:5px;display:block;}
+textarea,input[type=text],input[type=password],select{
+  width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13.5px;font-family:inherit;color:var(--text);transition:border-color .2s;background:#fff;
+}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--blue-mid);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+textarea{resize:vertical;}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;}
+.chip{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid var(--border);cursor:pointer;transition:all .2s;background:#fff;color:var(--muted);}
+.chip.active{border-color:var(--blue-mid);background:var(--blue-mid);color:#fff;}
+.chip:hover:not(.active){border-color:var(--blue-light);color:var(--blue-light);}
+.sel-box{background:var(--blue-pale);border:1.5px solid var(--blue-border);border-radius:9px;padding:10px 13px;margin-bottom:11px;}
+.sel-ttl{font-size:13.5px;font-weight:700;color:var(--blue);margin-bottom:3px;line-height:1.5;}
+.sel-src{font-size:12px;color:var(--blue-mid);}
+.warn-box{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:9px 13px;font-size:12.5px;color:#78350f;margin-bottom:11px;line-height:1.6;}
+.warn-box a{color:#1e40af;font-weight:700;}
+
+/* 버튼 */
+.btn{padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;transition:all .2s;}
+.btn-primary{background:var(--blue-mid);color:#fff;width:100%;padding:12px;font-size:15px;}
+.btn-primary:hover{background:var(--blue);}
+.btn-primary:disabled{background:var(--muted);cursor:not-allowed;}
+.btn-sm{padding:6px 11px;font-size:12.5px;}
+.btn-ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border);}
+.btn-ghost:hover{background:#e2e8f0;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#047857;}
+.btn-purple{background:var(--purple);color:#fff;}
+.btn-purple:hover{background:#6d28d9;}
+.action-row{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* 출력 영역 */
+.output-area{
+  background:#f8fafc;border:none;
+  padding:16px;min-height:420px;
+  font-size:14px;line-height:1.9;
+  overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;
+}
+.output-placeholder{color:var(--faint);text-align:center;padding:60px 20px;}
+.output-placeholder .icon{font-size:37px;margin-bottom:10px;}
+
+/* 스피너 */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+.spinner-dark{display:inline-block;width:12px;height:12px;border:2px solid rgba(37,99,235,.2);border-top-color:var(--blue-mid);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 히스토리 */
+.hist-item{padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;gap:8px;transition:background .15s;}
+.hist-item:hover{background:#f8fafc;}
+.hist-num{font-size:11px;background:var(--blue-pale);color:var(--blue);border-radius:4px;padding:1px 5px;font-weight:700;white-space:nowrap;margin-top:2px;}
+.hist-txt{font-size:12.5px;line-height:1.5;flex:1;}
+.hist-date{font-size:11px;color:var(--faint);white-space:nowrap;}
+
+/* 모달 */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:16px;padding:24px;width:92%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);transition:transform .2s;}
+.modal-overlay.open .modal{transform:scale(1);}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:18px;}
+.modal-footer{display:flex;gap:8px;margin-top:16px;}
+.modal-footer .btn{flex:1;}
+
+/* 토스트 */
+.toast{position:fixed;bottom:22px;right:22px;background:#1e293b;color:#fff;padding:11px 18px;border-radius:10px;font-size:14px;z-index:10000;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* 반응형 */
+@media(max-width:1100px){
+  body{overflow:auto;height:auto;}
+  .dash-3col{grid-template-columns:1fr;height:auto;overflow:visible;}
+  .col-wrap{height:auto;}
+  .card{flex:none;height:auto;}
+  .news-scroll,.hl-scroll,.sidebar-list{max-height:400px;}
+  .post-view-wrap{height:auto;overflow:visible;}
+}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+</style>
+</head>
+<body>
+
+<!-- ══ 헤더 ══ -->
+<header>
+  <div>
+    <h1>📰 나만의 뉴스 브리핑</h1>
+    <div class="hd-sub">퇴직연금 · 4대보험 · 고용노동정책 · 건설업 인사노무 · 건설업 고용산재</div>
+  </div>
+  <div class="hd-actions">
+    <button class="icon-btn" onclick="refreshAllNews()" title="뉴스 새로고침">🔄</button>
+    <button class="icon-btn" onclick="openHistory()" title="포스팅 이력">📂</button>
+    <button class="icon-btn" onclick="openSettings()" title="설정">⚙️</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════
+     뷰 1: 뉴스 대시보드 (3열)
+══════════════════════════════════ -->
+<div id="viewDash" class="dash-3col">
+
+  <!-- ─ 1열: AI 인사이트(상단) + 주목 뉴스(하단) — 메인 영역 ─ -->
+  <div class="col-wrap">
+    <div class="card">
+      <div class="center-inner" id="centerInner">
+
+        <!-- AI 인사이트 (상단 고정) -->
+        <div class="insight-top">
+          <div class="insight-top-hdr">
+            <div>
+              <span style="font-size:15px;font-weight:800;">🤖 오늘의 AI 인사이트</span>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">오늘 뉴스의 핵심 이슈와 블로거 관점 분석</div>
+            </div>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <button class="btn btn-sm btn-ghost" id="expandInsightBtn" onclick="toggleInsightExpand()" style="padding:5px 10px;font-size:13px;display:none;">⛶ 펼치기</button>
+              <button class="btn btn-sm btn-ghost" id="insightBtn" onclick="genInsights()" style="padding:5px 12px;font-size:13px;">✨ 인사이트 생성</button>
+            </div>
+          </div>
+          <div class="insight-area" id="insightArea">
+            <div style="color:var(--faint);text-align:center;padding:20px;font-size:13px;">
+              <div style="font-size:27px;margin-bottom:8px;">🤖</div>
+              [✨ 인사이트 생성] 버튼을 누르면<br>오늘의 뉴스를 AI가 분석해드립니다<br>
+              <span style="font-size:12px;color:var(--faint);">(Claude API 키 필요)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 주목 뉴스 (하단 스크롤) -->
+        <div class="hl-section">
+          <div class="hl-hdr">
+            <span style="font-size:14px;font-weight:700;">⭐ 오늘 주목할 뉴스</span>
+            <span style="font-size:11.5px;color:var(--faint);" id="hlCount"></span>
+          </div>
+          <div class="hl-scroll" id="highlightList">
+            <div style="padding:30px;text-align:center;color:var(--faint);font-size:13px;">
+              <div style="font-size:25px;margin-bottom:6px;">📡</div>
+              불러오는 중...
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ 2열: 카테고리 사이드바 ─ -->
+  <div class="col-wrap">
+    <div class="card">
+      <div class="card-hdr" style="padding:11px 13px;">
+        <div class="card-title" style="font-size:14px;">📂 카테고리</div>
+        <button class="btn btn-sm btn-ghost" style="padding:4px 9px;font-size:12px;" onclick="refreshAllNews()">🔄</button>
+      </div>
+      <div class="sidebar-list" id="sidebarList"></div>
+      <div class="si-footer" id="refreshInfo">불러오는 중...</div>
+    </div>
+  </div>
+
+  <!-- ─ 3열: 오늘의 주요 뉴스 목록 (보조 패널) ─ -->
+  <div class="col-wrap">
+    <div class="card">
+      <div class="news-col-hdr">
+        <div>
+          <div class="news-col-title" id="newsColTitle">📰 오늘의 주요 뉴스</div>
+          <div class="news-col-sub" id="newsColSub">카테고리를 선택하세요</div>
+        </div>
+      </div>
+      <div class="news-scroll" id="newsList">
+        <div style="padding:40px;text-align:center;color:var(--faint);">
+          <div style="font-size:29px;">📡</div>
+          <div style="margin-top:8px;font-size:14px;">뉴스를 불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════
+     뷰 2: 블로그 포스팅 생성
+══════════════════════════════════ -->
+<div id="viewPost" style="display:none;">
+  <div class="post-view-wrap">
+
+    <div class="back-bar">
+      <button class="back-btn" onclick="showView('dash')">← 뉴스 대시보드</button>
+      <span style="font-size:13px;color:var(--faint);" id="postCrumb"></span>
+    </div>
+
+    <div class="post-grid">
+
+      <!-- 포스팅 폼 -->
+      <div class="card" style="height:auto;">
+        <div class="card-hdr">
+          <div class="card-title">✍️ 블로그 포스팅 생성</div>
+          <span id="apiStatus" style="font-size:12px;"></span>
+        </div>
+        <div class="card-body">
+
+          <div class="warn-box" id="apiWarn" style="display:none;">
+            ⚠️ Claude API 키가 없습니다.
+            <a href="#" onclick="openSettings();return false;">⚙️ 설정</a>에서 입력하면 AI 자동 포스팅이 활성화됩니다.
+          </div>
+
+          <div class="sel-box" id="selBox" style="display:none;">
+            <div class="sel-ttl" id="selTitle"></div>
+            <div class="sel-src" id="selSrc"></div>
+          </div>
+
+          <div class="fg">
+            <span class="fl">포스팅 유형</span>
+            <div class="chip-row" id="fmtChips">
+              <div class="chip active" onclick="pickFmt(this,'news')">뉴스 분석</div>
+              <div class="chip" onclick="pickFmt(this,'policy')">정책 해설</div>
+              <div class="chip" onclick="pickFmt(this,'qna')">Q&amp;A 형식</div>
+              <div class="chip" onclick="pickFmt(this,'case')">사례 분석</div>
+              <div class="chip" onclick="pickFmt(this,'summary')">핵심 요약</div>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label class="fl" for="topicInput">포스팅 주제 / 기사 내용</label>
+            <textarea id="topicInput" rows="7"
+              placeholder="예시&#10;• 퇴직연금 수익률 현황 포스팅하고 싶어&#10;• 건설업 하도급 근로자 산재보험 최근 변경사항&#10;• 뉴스 목록에서 📝 포스팅 버튼을 클릭하면 자동 입력됩니다"></textarea>
+          </div>
+
+          <div class="fg">
+            <label class="fl" for="addInput">추가 요청사항 (선택)</label>
+            <input type="text" id="addInput" placeholder="예: 실무 사례 포함, 표 형식 활용, SEO 최적화...">
+          </div>
+
+          <div class="fg">
+            <label class="fl" for="readerSel">대상 독자층</label>
+            <select id="readerSel">
+              <option value="worker">근로자 / 일반인</option>
+              <option value="employer">사업주 / HR 담당자</option>
+              <option value="construction">건설업 현장 실무자</option>
+              <option value="expert">노무사 / 법률 전문가</option>
+              <option value="all">전체 (포괄적)</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" id="genBtn" onclick="generatePost()">
+            🤖 AI 블로그 포스팅 생성
+          </button>
+        </div>
+      </div>
+
+      <!-- 출력 카드 -->
+      <div class="card" style="height:auto;">
+        <div class="card-hdr">
+          <div class="card-title">📄 생성된 포스팅</div>
+          <div class="action-row" id="actionRow" style="display:none;">
+            <button class="btn btn-sm btn-ghost" onclick="copyPost()">📋 복사</button>
+            <button class="btn btn-sm btn-ghost" onclick="downloadPost()">💾 저장</button>
+            <button class="btn btn-sm btn-green" onclick="saveToHistory()">📂 이력</button>
+            <button class="btn btn-sm btn-purple" onclick="genSEO()">🔍 SEO</button>
+            <button class="btn btn-sm btn-ghost" id="revisePanelBtn" onclick="toggleRevisePanel()" style="border-color:var(--amber);color:var(--amber);">✏️ 수정</button>
+          </div>
+        </div>
+        <div class="output-area" id="outputArea">
+          <div class="output-placeholder">
+            <div class="icon">📝</div>
+            <div style="font-weight:700;margin-bottom:6px;">포스팅을 생성해보세요</div>
+            <div style="font-size:13px;">왼쪽에서 유형·주제를 설정하고<br>생성 버튼을 누르세요</div>
+          </div>
+        </div>
+        <div id="revisePanel" style="display:none;padding:13px 15px;border-top:2px solid var(--amber);background:#fffbeb;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#92400e;">✏️ 포스팅 수정 요청</div>
+          <textarea id="reviseInput" rows="3"
+            placeholder="수정할 내용을 자유롭게 입력하세요&#10;예: 더 친근한 톤으로 바꿔줘 / 결론 부분을 더 자세히 써줘 / 표 형식 추가해줘 / 500자 더 늘려줘 / 해시태그를 30개로 늘려줘"></textarea>
+          <div style="display:flex;gap:7px;margin-top:8px;">
+            <button class="btn btn-primary" id="reviseBtn" onclick="revisePost()" style="flex:1;">🔄 수정 적용</button>
+            <button class="btn btn-ghost" onclick="toggleRevisePanel()" style="flex:none;padding:9px 14px;">닫기</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 포스팅 이력 ══ -->
+<div class="modal-overlay" id="histModal">
+  <div class="modal" style="max-width:520px;">
+    <h2>📂 포스팅 이력</h2>
+    <div style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;" id="histList">
+      <div style="padding:30px;text-align:center;color:var(--faint);">저장된 이력이 없습니다</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeHistory()">닫기</button>
+      <button class="btn btn-ghost" onclick="clearHistory()" style="color:var(--red);">전체 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 설정 ══ -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙️ 설정</h2>
+    <div class="fg">
+      <label class="fl">🤖 Claude API 키 (Anthropic)</label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..."
+          autocomplete="off" spellcheck="false"
+          style="flex:1;font-family:monospace;font-size:13px;letter-spacing:.5px;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleApiKey()"
+          id="eyeBtn" style="white-space:nowrap;padding:7px 10px;">👁 보기</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--faint);margin-top:4px;">
+        AI 포스팅·인사이트 생성에 사용 · <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue-mid);">발급받기</a>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">✍️ 블로거 필명</label>
+      <input type="text" id="nameInput" placeholder="예: 노무전문가 홍길동">
+    </div>
+    <div class="fg">
+      <label class="fl">🔄 자동 새로고침</label>
+      <select id="refreshSel">
+        <option value="0">사용 안 함</option>
+        <option value="900000">15분마다</option>
+        <option value="1800000" selected>30분마다</option>
+        <option value="3600000">1시간마다</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">📝 기본 포스팅 분량</label>
+      <select id="lengthSel">
+        <option value="1200">간략 (1,200자 이상)</option>
+        <option value="2000" selected>표준 (2,000자 이상)</option>
+        <option value="3000">상세 (3,000자 이상)</option>
+      </select>
+    </div>
+    <div id="testResult" style="display:none;font-size:13px;padding:8px 10px;border-radius:7px;margin-bottom:8px;"></div>
+    <div class="modal-footer" style="flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveSettings()" style="flex:2;min-width:80px;">저장</button>
+      <button class="btn btn-ghost" onclick="testApiKey()" style="flex:1;min-width:80px;">🔌 연결 테스트</button>
+      <button class="btn btn-ghost" onclick="closeSettings()" style="flex:1;min-width:60px;">취소</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   상수
+══════════════════════════════════════ */
+const KEYWORDS = [
+  {id:'pension',   label:'퇴직연금',     queries:['퇴직연금'],                                                  icon:'💰'},
+  {id:'insurance', label:'4대보험',       queries:['건강보험 보험료','국민연금','고용보험','산재보험 보상'],      icon:'🏥'},
+  {id:'policy',    label:'고용노동정책',  queries:['고용노동부 노동정책 고용정책'],                              icon:'📋'},
+  {id:'conshr',    label:'건설 인사노무', queries:['건설업 인사노무 하도급 근로자'],                             icon:'🏗️'},
+  {id:'consacc',   label:'건설 고용산재', queries:['건설업 산재보험 고용보험 재해'],                             icon:'⛑️'},
+  {id:'gs',        label:'관계사',        queries:['GS건설','자이씨앤에이','자이에스앤디'],                      icon:'🏢'},
+  {id:'market',    label:'증시',          queries:['반도체 AI 주가 실적','우주항공 산업 기업','건설주 분양 경기','코스피 KOSPI 증시'], icon:'📈'},
+  {id:'ai',     label:'AI·생성형AI',     queries:['생성형 AI 인공지능 트렌드','ChatGPT OpenAI Gemini AI 서비스','AI 기술 산업 동향'], icon:'🤖'},
+  {id:'claude', label:'클로드·Anthropic', queries:['Claude Anthropic AI','클로드 AI 생성형 업데이트'], icon:'🧠'},
+  {
+    id:'govnews', label:'정부 공시', icon:'🏛️',
+    govRss:['https://www.moel.go.kr/rss/news.do','https://www.kcomwel.or.kr/kcomwel/rss.jsp'],
+    queries:['고용노동부 보도자료','근로복지공단 공지 산재'],
+  },
+  {
+    id:'favorites', label:'즐겨찾기', icon:'⭐',
+    queries:[],
+    favSites:[
+      {id:'moel',       name:'고용노동부 보도자료', siteUrl:'https://www.moel.go.kr/news/enews/report/enewsList.do', rssUrl:null,                                              query:'고용노동부 "보도자료"'},
+      {id:'labortoday', name:'매일노동뉴스',         siteUrl:'https://www.labortoday.co.kr',                        rssUrl:'https://www.labortoday.co.kr/rss/allArticle.xml', query:'매일노동뉴스 노동'},
+    ],
+  },
+];
+
+const CAT_COLORS = {
+  pension:   {bg:'#dbeafe',color:'#1e40af'},
+  insurance: {bg:'#e0f2fe',color:'#0369a1'},
+  policy:    {bg:'#f3e8ff',color:'#6d28d9'},
+  conshr:    {bg:'#fef3c7',color:'#92400e'},
+  consacc:   {bg:'#fee2e2',color:'#991b1b'},
+  gs:        {bg:'#d1fae5',color:'#065f46'},
+  market:    {bg:'#fef9c3',color:'#854d0e'},
+  ai:        {bg:'#ecfeff',color:'#164e63'},
+  claude:    {bg:'#fdf4ff',color:'#6d28d9'},
+  govnews:   {bg:'#e0e7ff',color:'#3730a3'},
+  favorites: {bg:'#fce7f3',color:'#9d174d'},
+};
+
+const CORS_PROXIES = [
+  u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
+
+/* ══════════════════════════════════════
+   상태
+══════════════════════════════════════ */
+let newsData     = {};
+let activeTab    = KEYWORDS[0].id;
+let selArt       = null;
+let selFmt       = ['news'];
+let genContent   = '';
+let refreshTimer = null;
+let cfg          = {};
+
+/* ══════════════════════════════════════
+   초기화
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadCfg();
+  buildSidebar();
+  refreshAllNews();
+  startAutoRefresh();
+});
+
+/* ══════════════════════════════════════
+   뷰 전환
+══════════════════════════════════════ */
+function showView(v) {
+  document.getElementById('viewDash').style.display = v === 'dash' ? '' : 'none';
+  document.getElementById('viewPost').style.display = v === 'post' ? '' : 'none';
+  if (v === 'post') document.getElementById('viewPost').scrollTop = 0;
+}
+
+/* ══════════════════════════════════════
+   설정
+══════════════════════════════════════ */
+function loadCfg() {
+  const s = localStorage.getItem('nmb_cfg');
+  cfg = s ? JSON.parse(s) : {apiKey:'', name:'', refresh:1800000, length:2000};
+  applyApiStatus();
+}
+function saveSettings() {
+  cfg = {
+    apiKey:  document.getElementById('apiKeyInput').value.trim(),
+    name:    document.getElementById('nameInput').value.trim(),
+    refresh: parseInt(document.getElementById('refreshSel').value),
+    length:  parseInt(document.getElementById('lengthSel').value),
+  };
+  localStorage.setItem('nmb_cfg', JSON.stringify(cfg));
+  applyApiStatus();
+  startAutoRefresh();
+  closeSettings();
+  showToast('설정이 저장되었습니다 ✓');
+}
+function applyApiStatus() {
+  const warn   = document.getElementById('apiWarn');
+  const status = document.getElementById('apiStatus');
+  if (cfg.apiKey) {
+    if (warn)   warn.style.display = 'none';
+    if (status) status.innerHTML = '<span style="color:var(--green);font-weight:700;">● AI 연결됨</span>';
+  } else {
+    if (warn)   warn.style.display = 'block';
+    if (status) status.innerHTML = '<span style="color:var(--amber);font-weight:700;">● API 키 필요</span>';
+  }
+}
+function openSettings() {
+  document.getElementById('apiKeyInput').value = cfg.apiKey  || '';
+  document.getElementById('nameInput').value   = cfg.name    || '';
+  document.getElementById('refreshSel').value  = cfg.refresh || 1800000;
+  document.getElementById('lengthSel').value   = cfg.length  || 2000;
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+async function testApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const box = document.getElementById('testResult');
+  box.style.display = 'block';
+  if (!key) { box.style.background='#fef3c7'; box.style.color='#92400e'; box.textContent='⚠️ API 키를 먼저 입력해주세요.'; return; }
+  if (!key.startsWith('sk-ant-')) { box.style.background='#fee2e2'; box.style.color='#991b1b'; box.textContent='❌ 형식 오류: sk-ant- 로 시작해야 합니다.'; return; }
+  if (key.length < 80) { box.style.background='#fee2e2'; box.style.color='#991b1b'; box.textContent=`❌ 키가 너무 짧습니다 (${key.length}자).`; return; }
+  box.style.background='#f0f9ff'; box.style.color='#0369a1'; box.textContent='🔌 연결 테스트 중...';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'안녕'}]}),
+    });
+    if (res.ok) { box.style.background='#dcfce7'; box.style.color='#166534'; box.textContent='✅ 연결 성공! 저장 버튼을 눌러주세요.'; }
+    else {
+      const m={401:'API 키 유효하지 않음',403:'접근 권한 없음',429:'요청 한도 초과'};
+      box.style.background='#fee2e2'; box.style.color='#991b1b';
+      box.textContent=`❌ ${m[res.status]||'오류'} (${res.status})`;
+    }
+  } catch(e) {
+    box.style.background='#fee2e2'; box.style.color='#991b1b';
+    box.textContent=`❌ 네트워크 오류: ${e.message}`;
+  }
+}
+function toggleApiKey() {
+  const inp = document.getElementById('apiKeyInput');
+  const btn = document.getElementById('eyeBtn');
+  if (inp.type==='password') { inp.type='text'; btn.textContent='🔒 숨기기'; }
+  else { inp.type='password'; btn.textContent='👁 보기'; }
+}
+
+/* ══════════════════════════════════════
+   사이드바 빌드
+══════════════════════════════════════ */
+function buildSidebar() {
+  const el = document.getElementById('sidebarList');
+  el.innerHTML = KEYWORDS.map((k, i) => {
+    const divider = (k.id === 'market' || k.id === 'ai' || k.id === 'govnews' || k.id === 'favorites') ? '<div class="si-divider"></div>' : '';
+    return `${divider}<div class="si-item ${i===0?'active':''}" id="sc-${k.id}" onclick="switchTab('${k.id}')">
+      <div class="si-left">
+        <span class="si-icon">${k.icon}</span>
+        <span class="si-label">${k.label}</span>
+      </div>
+      <span class="si-count" id="sn-${k.id}">–</span>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   주목 뉴스
+══════════════════════════════════════ */
+function renderHighlights() {
+  const el = document.getElementById('highlightList');
+  const picks = [];
+  KEYWORDS.forEach(kw => {
+    if (kw.id === 'favorites') return;
+    const arr = newsData[kw.id];
+    if (!arr || !arr.length) return;
+    arr.filter(i => !i._failed).slice(0, 2).forEach(item => {
+      picks.push({...item, _kwId: kw.id, _kwLabel: kw.label, _kwIcon: kw.icon});
+    });
+  });
+  picks.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+  if (!picks.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--faint);font-size:13px;">뉴스 데이터 없음</div>';
+    return;
+  }
+
+  const hlCountEl = document.getElementById('hlCount');
+  if (hlCountEl) hlCountEl.textContent = `전체 ${picks.length}건 중 상위 표시`;
+
+  el.innerHTML = picks.slice(0, 16).map((item, i) => {
+    const col = CAT_COLORS[item._kwId] || {bg:'#f1f5f9', color:'#475569'};
+    const tabArr = newsData[item._kwId] || [];
+    const idx    = tabArr.findIndex(n => (n.link || n.title) === (item.link || item.title));
+    return `<div class="hl-item">
+      <span class="hl-cat" style="background:${col.bg};color:${col.color};">${item._kwIcon} ${item._kwLabel}</span>
+      <div class="hl-title"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></div>
+      <div class="hl-meta">
+        <span>${item.source||''}</span>
+        <span>${fmtDate(item.pubDate)}</span>
+        ${i<3?'<span class="badge badge-new">NEW</span>':''}
+        <button class="hl-post-btn" onclick="pickArticlePost(${idx},'${item._kwId}')">📝 포스팅</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   AI 인사이트
+══════════════════════════════════════ */
+async function genInsights() {
+  const btn  = document.getElementById('insightBtn');
+  const area = document.getElementById('insightArea');
+  if (!cfg.apiKey) {
+    area.innerHTML = '<div style="color:var(--amber);font-size:12.5px;padding:8px;">⚠️ API 키가 필요합니다. ⚙️ 설정에서 입력해주세요.</div>';
+    return;
+  }
+
+  // 전체 기사 제목 및 헤드라인 수집
+  const allTitles = [];
+  const headlines = [];
+  KEYWORDS.forEach(kw => {
+    if (kw.id === 'favorites') return;
+    const arr = newsData[kw.id];
+    if (!arr || !arr.length) return;
+    const valid = arr.filter(i => !i._failed && isRecentArticle(i.pubDate));
+    if (!valid.length) return;
+    valid.forEach(item => {
+      allTitles.push(item.title);
+      headlines.push(`[${kw.label}] ${item.title}`);
+    });
+  });
+  if (!headlines.length) { area.innerHTML = '<div style="color:var(--faint);font-size:12.5px;padding:8px;">뉴스를 먼저 새로고침해주세요.</div>'; return; }
+
+  // 기사 제목 키워드 빈도 분석 → Top 5
+  const topKeywords = extractTopKeywords(allTitles, 5);
+  const keywordSummary = topKeywords.map((k, i) => `${i+1}위 "${k.word}" (${k.count}건)`).join(', ');
+
+  btn.disabled = true; btn.textContent = '분석 중...';
+  area.innerHTML = '<div style="padding:10px;text-align:center;color:var(--muted);font-size:12.5px;"><span class="spinner-dark"></span>분석 중...</div>';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':cfg.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:900,
+        messages:[{role:'user',content:
+`오늘 뉴스 기사 제목에서 가장 많이 등장한 키워드 Top 5입니다.
+반드시 이 키워드를 기반으로 핵심 이슈 3개를 도출하고 인사이트를 제공하세요.
+키워드에 없는 주제는 핵심 이슈로 선정하지 마세요.
+
+[오늘의 Top 5 키워드 — 이 키워드가 인사이트의 기준입니다]
+${keywordSummary}
+
+[오늘의 전체 뉴스 헤드라인]
+${headlines.join('\n')}
+
+형식:
+1. 오늘의 핵심 이슈 3개 (Top 5 키워드에서 도출, 각 한 줄씩)
+2. 주목 포인트 (불릿 3개, 핵심 이슈 연관)
+3. 추천 포스팅 소재 (1-2개, 핵심 이슈에서 선정)`
+        }],
+      }),
+    });
+    if (!res.ok) throw new Error(`API 오류 (${res.status})`);
+    const data = await res.json();
+
+    // 상단 키워드 통계 표시
+    const statsHtml = `<div style="margin-bottom:10px;padding:7px 10px;background:#f0f7ff;border-radius:8px;border:1px solid #bfdbfe;">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:3px;">🔑 오늘의 Top 5 키워드</div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.7;">${topKeywords.map((k,i) => `<strong style="color:var(--text);">${i+1}. ${k.word}</strong> ${k.count}건`).join(' &nbsp;·&nbsp; ')}</div>
+    </div>`;
+
+    let html = data.content[0].text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^[-•]\s+(.+)$/gm,'<li style="margin:2px 0 2px 14px;">$1</li>')
+      .replace(/^(\d+)\.\s+(.+)$/gm,'<div style="font-weight:700;margin:7px 0 3px;color:var(--blue);">$1. $2</div>')
+      .replace(/\n/g,'<br>');
+    area.innerHTML = `<div style="line-height:1.7;">${statsHtml}${html}</div>`;
+    document.getElementById('expandInsightBtn').style.display = '';
+  } catch(e) {
+    area.innerHTML = `<div style="color:var(--red);font-size:12.5px;padding:8px;">❌ ${e.message}</div>`;
+  } finally { btn.disabled=false; btn.textContent='인사이트 생성'; }
+}
+
+function toggleInsightExpand() {
+  const inner = document.getElementById('centerInner');
+  const btn   = document.getElementById('expandInsightBtn');
+  const isExpanded = inner.classList.toggle('insight-expanded');
+  btn.textContent = isExpanded ? '🔼 접기' : '⛶ 펼치기';
+}
+
+/* ══════════════════════════════════════
+   뉴스 Fetch
+══════════════════════════════════════ */
+async function refreshAllNews() {
+  document.getElementById('refreshInfo').textContent = '새로고침 중...';
+  await Promise.all(KEYWORDS.map(fetchKw));
+  renderNewsList(activeTab);
+  renderHighlights();
+  const t = new Date();
+  document.getElementById('refreshInfo').textContent =
+    `업데이트: ${t.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;
+}
+
+async function fetchKw(kw) {
+  if (kw.favSites) {
+    const results = await Promise.all(kw.favSites.map(fetchFavSite));
+    const allItems = [];
+    results.forEach((items, i) => {
+      if (items?.length) allItems.push(...items.map(item => ({...item, _siteId:kw.favSites[i].id, source:kw.favSites[i].name})));
+      else allItems.push({_siteId:kw.favSites[i].id, _failed:true, source:kw.favSites[i].name});
+    });
+    newsData[kw.id] = allItems.some(i => !i._failed) ? allItems : null;
+    const recentCntFav = allItems.filter(i => !i._failed && isRecentArticle(i.pubDate)).length;
+    document.getElementById(`sn-${kw.id}`).textContent = allItems.some(i => !i._failed) ? recentCntFav : '!';
+    return;
+  }
+  const tasks = [...(kw.govRss||[]).map(url => fetchDirectRss(url)), ...kw.queries.map(q => fetchSingleQuery(q))];
+  const results = await Promise.all(tasks);
+  const merged  = results.flatMap(r => r??[]);
+  if (!merged.length) { newsData[kw.id]=null; document.getElementById(`sn-${kw.id}`).textContent='!'; return; }
+  const seen = new Set();
+  const unique = merged.filter(item => { const k=item.link||item.title; if(seen.has(k))return false; seen.add(k); return true; });
+  unique.sort((a,b) => new Date(b.pubDate)-new Date(a.pubDate));
+  newsData[kw.id] = unique.slice(0,20);
+  const recentCnt = newsData[kw.id].filter(i => isRecentArticle(i.pubDate)).length;
+  document.getElementById(`sn-${kw.id}`).textContent = recentCnt;
+}
+
+async function fetchFavSite(site) {
+  if (site.rssUrl) {
+    try {
+      const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(site.rssUrl)}`,{signal:AbortSignal.timeout(12000)});
+      if (r.ok) { const d=await r.json(); if(d.status==='ok'&&d.items?.length) return d.items.slice(0,15).map(item=>({title:cleanHtml(item.title),link:item.link||site.siteUrl,source:site.name,pubDate:item.pubDate||''})); }
+    } catch {}
+    const via = await fetchDirectRss(site.rssUrl);
+    if (via?.length) return via.map(i=>({...i,source:site.name}));
+  }
+  if (site.query) { const items=await fetchSingleQuery(site.query); if(items?.length) return items.map(i=>({...i,source:site.name})); }
+  return null;
+}
+
+async function fetchDirectRss(rssUrl) {
+  try {
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`,{signal:AbortSignal.timeout(12000)});
+    if (r.ok) { const d=await r.json(); if(d.status==='ok'&&d.items?.length) return d.items.slice(0,12).map(item=>({title:cleanHtml(item.title),link:item.link||'#',source:item.author||'정부 공식',pubDate:item.pubDate||'',isGov:true})); }
+  } catch {}
+  for (const makeUrl of CORS_PROXIES) {
+    try {
+      const res = await fetch(makeUrl(rssUrl),{signal:AbortSignal.timeout(10000)});
+      if (!res.ok) continue;
+      const ct=res.headers.get('content-type')||'';
+      let text = ct.includes('json') ? (await res.json()).contents : await res.text();
+      if (typeof text!=='string') continue;
+      if (!(text.includes('<item>')||text.includes('<entry>'))) continue;
+      return parseRssXml(text,true);
+    } catch {}
+  }
+  return null;
+}
+
+function parseRssXml(text, isGov=false) {
+  const doc = new DOMParser().parseFromString(text,'text/xml');
+  const els = doc.querySelectorAll('item').length ? Array.from(doc.querySelectorAll('item')) : Array.from(doc.querySelectorAll('entry'));
+  return els.slice(0,12).map(el => ({
+    title:   cleanHtml(el.querySelector('title')?.textContent||''),
+    link:    el.querySelector('link')?.textContent?.trim()||el.querySelector('link')?.getAttribute('href')||'#',
+    source:  el.querySelector('source')?.textContent||parseSrc(el.querySelector('title')?.textContent||'')||(isGov?'정부 공식':''),
+    pubDate: el.querySelector('pubDate')?.textContent||el.querySelector('updated')?.textContent||'',
+    isGov,
+  }));
+}
+
+async function fetchSingleQuery(query) {
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
+  try {
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`,{signal:AbortSignal.timeout(12000)});
+    if (r.ok) { const d=await r.json(); if(d.status==='ok'&&d.items?.length) return d.items.slice(0,10).map(item=>({title:cleanHtml(item.title),link:item.link||'#',source:item.author||parseSrc(item.title),pubDate:item.pubDate||''})); }
+  } catch {}
+  for (const makeUrl of CORS_PROXIES) {
+    try {
+      const res = await fetch(makeUrl(rssUrl),{signal:AbortSignal.timeout(10000)});
+      if (!res.ok) continue;
+      const ct=res.headers.get('content-type')||'';
+      let text; if(ct.includes('json')){const j=await res.json();text=j.contents??j;}else{text=await res.text();}
+      if (typeof text==='string'&&text.includes('<item>')) return parseRssXml(text);
+    } catch {}
+  }
+  return null;
+}
+
+/* ══════════════════════════════════════
+   탭 전환 / 뉴스 렌더
+══════════════════════════════════════ */
+function switchTab(id) {
+  activeTab = id;
+  KEYWORDS.forEach(k => document.getElementById(`sc-${k.id}`)?.classList.toggle('active', k.id===id));
+  const kw = KEYWORDS.find(k => k.id===id);
+  document.getElementById('newsColTitle').textContent = `${kw?.icon||''} ${kw?.label||''} 뉴스`;
+  const cnt = newsData[id];
+  document.getElementById('newsColSub').textContent =
+    cnt === undefined ? '불러오는 중...' :
+    cnt === null      ? '로드 실패' :
+    `${cnt.filter?.(i=>!i._failed).length || cnt.length}건 · ${document.getElementById('refreshInfo').textContent}`;
+  renderNewsList(id);
+}
+
+function renderNewsList(id) {
+  const el  = document.getElementById('newsList');
+  const arr = newsData[id];
+
+  if (arr === undefined) { el.innerHTML='<div style="padding:40px;text-align:center;color:var(--faint);">📡 불러오는 중...</div>'; return; }
+  if (arr === null) {
+    el.innerHTML=`<div style="padding:40px;text-align:center;color:var(--red);">
+      <div style="font-size:27px;">⚠️</div>
+      <div style="font-weight:700;margin-top:6px;">뉴스 로드 실패</div>
+      <div style="font-size:12px;color:var(--faint);margin-top:3px;">네트워크 또는 CORS 차단</div>
+      <button class="btn btn-sm btn-ghost" style="margin-top:10px;" onclick="refreshAllNews()">다시 시도</button>
+    </div>`; return;
+  }
+  if (!arr.length) { el.innerHTML='<div style="padding:40px;text-align:center;color:var(--faint);">검색된 뉴스가 없습니다</div>'; return; }
+
+  // 즐겨찾기 탭: 사이트별 그룹
+  if (id === 'favorites') {
+    const kw = KEYWORDS.find(k=>k.id==='favorites');
+    el.innerHTML = (kw?.favSites||[]).map(site => {
+      const siteItems = arr.filter(item => !item._failed && item._siteId===site.id);
+      const badgeCls  = site.id==='labortoday' ? 'badge-labor' : 'badge-gov';
+      const header = `<div class="grp-hdr">
+        <span><span class="badge ${badgeCls}" style="margin-right:6px;">${site.id==='moel'?'공식':'뉴스'}</span>${site.name}</span>
+        <a href="${site.siteUrl}" target="_blank" rel="noopener" class="grp-site-link">🔗 직접 방문</a>
+      </div>`;
+      if (!siteItems.length) return header+`<div style="padding:12px 15px;font-size:13px;color:var(--faint);">기사를 불러오지 못했습니다. <a href="${site.siteUrl}" target="_blank" style="color:var(--blue-mid);">직접 방문</a>해 확인해보세요.</div>`;
+      return header + siteItems.map((item, si) => {
+        const gi = arr.indexOf(item);
+        return `<div class="news-item" onclick="pickArticlePost(${gi},'${id}')">
+          <div class="news-ttl">
+            <a href="${item.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${item.title}</a>
+            <a href="${item.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="news-ext">🔗</a>
+          </div>
+          <div class="news-meta">
+            <span class="news-date">${fmtDate(item.pubDate)}</span>
+            ${si<2?'<span class="badge badge-new">NEW</span>':''}
+            <button class="news-post-btn" onclick="event.stopPropagation();pickArticlePost(${gi},'${id}')">📝 포스팅</button>
+          </div>
+        </div>`;
+      }).join('');
+    }).join('');
+    return;
+  }
+
+  const isGs     = (id === 'gs');
+  const isMarket = (id === 'market');
+  el.innerHTML = arr.map((item, i) => `
+    <div class="news-item ${selArt?.link===item.link?'selected':''}" onclick="pickArticlePost(${i},'${id}')">
+      <div class="news-ttl">
+        <a href="${item.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${item.title}</a>
+        <a href="${item.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="news-ext">🔗</a>
+      </div>
+      <div class="news-meta">
+        ${item.isGov?'<span class="badge badge-gov">공식</span>':''}
+        ${isGs?'<span class="badge badge-gs">관계사</span>':''}
+        ${isMarket?'<span class="badge badge-market">증시</span>':''}
+        <span class="news-src">${item.source}</span>
+        <span class="news-date">${fmtDate(item.pubDate)}</span>
+        ${i<3?'<span class="badge badge-new">NEW</span>':''}
+        <button class="news-post-btn" onclick="event.stopPropagation();pickArticlePost(${i},'${id}')">📝 포스팅</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   기사 선택 → 포스팅 화면
+══════════════════════════════════════ */
+function pickArticlePost(idx, tabId) {
+  const arr = newsData[tabId];
+  if (!arr || !arr[idx]) return;
+  const item = arr[idx];
+  const kw   = KEYWORDS.find(k => k.id===tabId);
+  selArt = item;
+
+  document.getElementById('selBox').style.display   = 'block';
+  document.getElementById('selTitle').textContent   = item.title;
+  document.getElementById('selSrc').textContent     = `${item.source} · ${fmtDate(item.pubDate)}`;
+  document.getElementById('postCrumb').textContent  = `${kw?.icon||''} ${kw?.label||''} › ${item.title.slice(0,35)}...`;
+  document.getElementById('topicInput').value =
+    `다음 기사를 바탕으로 블로그 포스팅을 작성해주세요.\n\n제목: ${item.title}\n출처: ${item.source}\n분야: ${kw?.label||''}\n\n이 기사의 핵심 내용을 분석하고, 실무적 시사점과 독자가 알아야 할 중요 정보를 정리해주세요.`;
+  document.getElementById('outputArea').innerHTML = `<div class="output-placeholder">
+    <div class="icon">📝</div>
+    <div style="font-weight:700;margin-bottom:6px;">포스팅을 생성해보세요</div>
+    <div style="font-size:13px;">왼쪽에서 유형·조건을 설정하고<br>생성 버튼을 누르세요</div>
+  </div>`;
+  document.getElementById('actionRow').style.display = 'none';
+  showView('post');
+}
+
+/* ══════════════════════════════════════
+   포스팅 유형
+══════════════════════════════════════ */
+function pickFmt(el, fmt) {
+  const idx = selFmt.indexOf(fmt);
+  if (idx > -1) {
+    if (selFmt.length === 1) return; // 최소 1개 유지
+    selFmt.splice(idx, 1);
+    el.classList.remove('active');
+  } else {
+    selFmt.push(fmt);
+    el.classList.add('active');
+  }
+}
+
+/* ══════════════════════════════════════
+   포스팅 생성
+══════════════════════════════════════ */
+async function generatePost() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) { showToast('포스팅 주제를 입력해주세요'); return; }
+
+  const btn = document.getElementById('genBtn');
+  const out = document.getElementById('outputArea');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>AI가 작성 중...';
+  out.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">잠시만 기다려주세요...</div>';
+  document.getElementById('actionRow').style.display = 'none';
+
+  try {
+    if (cfg.apiKey) { await callClaude(topic); }
+    else { showTemplate(topic); }
+    document.getElementById('actionRow').style.display = 'flex';
+  } catch(e) {
+    const msg = e.message||'';
+    let diagnosis='', help='';
+    if (msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('Load failed')) { diagnosis='🌐 네트워크/CORS 차단'; help='<p style="font-size:13px;margin-top:6px;">Chrome/Edge 브라우저 사용을 권장합니다.</p>'; }
+    else if (msg.includes('401')||msg.includes('invalid x-api-key')) { diagnosis='🔑 API 키 인증 실패 (401)'; help='<p style="font-size:13px;margin-top:6px;">⚙️ 설정에서 API 키를 다시 확인하세요.</p>'; }
+    else if (msg.includes('429')) { diagnosis='⏳ 요청 한도 초과 (429)'; help='<p style="font-size:13px;margin-top:6px;">잠시 후 다시 시도해주세요.</p>'; }
+    else if (msg.includes('500')||msg.includes('503')) { diagnosis='🔧 Anthropic 서버 오류'; help='<p style="font-size:13px;margin-top:6px;">1~2분 후 재시도하세요.</p>'; }
+    else { diagnosis='❓ 알 수 없는 오류'; help='<p style="font-size:13px;margin-top:6px;">⚙️ 설정 → 연결 테스트로 API 키를 검증해보세요.</p>'; }
+    out.innerHTML=`<div style="padding:16px;"><div style="color:var(--red);font-weight:700;font-size:15px;">❌ ${diagnosis}</div><div style="font-size:12.5px;color:var(--muted);margin-top:6px;font-family:monospace;background:#f8fafc;padding:6px 8px;border-radius:6px;word-break:break-all;">${msg}</div>${help}<div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="copyPromptOnly()">📋 프롬프트만 복사</button></div></div>`;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '🤖 AI 블로그 포스팅 생성';
+}
+
+async function callClaude(topic) {
+  const key = cfg.apiKey.trim();
+  if (!key) throw new Error('API 키가 비어 있습니다.');
+  if (!key.startsWith('sk-ant-')) throw new Error('API 키 형식 오류 (sk-ant- 시작 필요)');
+  if (key.length < 80) throw new Error(`API 키가 너무 짧습니다 (${key.length}자)`);
+  const fmtMap={news:'뉴스 분석 형식 (배경→현황→영향→시사점)',policy:'정책 해설 형식 (주요내용→적용대상→시행일→주의사항)',qna:'Q&A 형식 (독자 FAQ 5개 이상)',case:'사례 분석 형식 (실제 사례 기반, 법적 판단·근거 포함)',summary:'핵심 요약 형식 (불릿·표·번호 목록 적극 활용)'};
+  const readerMap={worker:'근로자·일반인 눈높이에서, 법률 용어는 쉽게',employer:'사업주·HR 담당자 관점, 실무 적용 방법 중심',construction:'건설업 현장 실무자 관점, 현장 적용 사례 포함',expert:'노무사·법률 전문가 수준, 법령 조문·행정해석 포함',all:'다양한 독자층을 고려해 기초부터 심화까지'};
+  const reader=document.getElementById('readerSel').value;
+  const add   =document.getElementById('addInput').value.trim();
+  const len   =cfg.length||2000;
+  const name  =cfg.name||'노무 전문 블로거';
+  const today =new Date().toLocaleDateString('ko-KR');
+
+  const system=`당신은 노동법·퇴직연금·4대보험·건설업 인사노무 분야 전문 파워블로거 "${name}"입니다.
+오늘: ${today}
+
+포스팅 원칙:
+1. 반드시 다음 인삿말로 시작:
+   안녕하세요.
+
+   꼼지락연구소 꼼Lab.입니다.
+2. 네이버 블로그 형식 — 소제목은 【 】 또는 ▶로 구분, 중요 키워드 굵게
+   이미지 삽입 위치는 반드시:
+   [사진]
+   📌 AI 이미지 생성 프롬프트 (한글): "프롬프트"
+   📌 AI 이미지 생성 프롬프트 (영문): "English prompt"
+   💡 이미지 콘셉트: 한 줄 설명
+3. SEO 핵심 키워드 자연스럽게 반복
+4. 최신 고용노동부 지침·법령 기반 정확한 정보
+5. 친근하되 전문적인 톤
+6. 포스팅 마지막에 해시태그 20개 이상`;
+
+  const user=`다음 주제로 네이버 블로그 포스팅을 작성해주세요.
+
+[주제/기사]
+${topic}
+
+[조건]
+- 형식: ${selFmt.map(f => fmtMap[f]).filter(Boolean).join(' + ') || fmtMap.news}
+- 대상: ${readerMap[reader]||readerMap.all}
+- 분량: ${len}자 이상
+- 추가 요청: ${add||'없음'}
+
+[구성]
+1. 제목 (SEO 키워드 포함, 클릭 유도 2가지)
+2. 인삿말 (안녕하세요.\n\n꼼지락연구소 꼼Lab.입니다.)
+3. 서론 · 본론 · 결론
+4. 해시태그 (#태그 20개 이상)`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-7',max_tokens:4096,system,messages:[{role:'user',content:user}]})});
+  if (!res.ok) { const e=await res.json().catch(()=>null); const m={401:'인증 실패',403:'접근 권한 없음',429:'요청 한도 초과',500:'서버 오류',503:'서비스 중단'}; throw new Error(`${m[res.status]||'API 오류'} (${res.status})${e?.error?.message?': '+e.error.message:''}`); }
+  const data = await res.json();
+  genContent = data.content[0].text;
+  renderOutput(genContent);
+}
+
+function showTemplate(topic) {
+  genContent=`📌 [포스팅 초안 — API 키 설정 후 AI 자동 작성 가능]\n\n작성일: ${new Date().toLocaleDateString('ko-KR')}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n【주제】\n${topic}\n\n▶ 추천 제목\n• 꼭 알아야 할 핵심 정리\n• 실무자가 바로 쓰는 완벽 가이드\n\n▶ 본론 구성안\n1. 배경 및 현황\n2. 핵심 내용 분석\n3. 관련 법령 및 규정\n4. 실무 적용 방법\n5. FAQ · 주의사항\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n💡 ⚙️ 설정에서 Claude API 키를 입력하면 AI가 완성된 포스팅을 자동 작성합니다!`;
+  renderOutput(genContent);
+}
+
+function renderOutput(text) {
+  const out=document.getElementById('outputArea');
+  let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^#{1}\s+(.+)$/gm,'<h2 style="font-size:18px;font-weight:800;margin:18px 0 8px;color:var(--blue);">$1</h2>')
+    .replace(/^#{2}\s+(.+)$/gm,'<h3 style="font-size:16px;font-weight:700;margin:14px 0 6px;">$1</h3>')
+    .replace(/^[─━]{3,}$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">')
+    .replace(/^[-•▶]\s+(.+)$/gm,'<li style="margin:3px 0 3px 12px;">$1</li>')
+    .replace(/^(\d+)\.\s+(.+)$/gm,'<li style="margin:3px 0 3px 12px;list-style-type:decimal;">$2</li>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  out.innerHTML=`<div style="line-height:1.9;">${html}</div>`;
+}
+
+/* ══════════════════════════════════════
+   액션 버튼
+══════════════════════════════════════ */
+function toggleRevisePanel() {
+  const panel = document.getElementById('revisePanel');
+  const btn   = document.getElementById('revisePanelBtn');
+  const show  = panel.style.display === 'none';
+  panel.style.display = show ? 'block' : 'none';
+  btn.style.background   = show ? 'var(--amber)' : '';
+  btn.style.color        = show ? '#fff' : 'var(--amber)';
+  btn.style.borderColor  = 'var(--amber)';
+  if (show) document.getElementById('reviseInput').focus();
+}
+
+async function revisePost() {
+  if (!genContent) { showToast('수정할 포스팅이 없습니다'); return; }
+  const revise = document.getElementById('reviseInput').value.trim();
+  if (!revise) { showToast('수정 요청 내용을 입력해주세요'); return; }
+  if (!cfg.apiKey) { showToast('API 키가 필요합니다'); return; }
+
+  const btn = document.getElementById('reviseBtn');
+  const out = document.getElementById('outputArea');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>수정 중...';
+  out.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px;">포스팅을 수정하는 중입니다...</div>';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':cfg.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: 'claude-opus-4-7',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: `아래 블로그 포스팅을 수정 요청사항에 맞게 수정하고, 수정된 포스팅 전체를 출력해주세요.\n\n[현재 포스팅]\n${genContent}\n\n[수정 요청]\n${revise}`
+        }]
+      })
+    });
+    if (!res.ok) throw new Error(`API 오류 (${res.status})`);
+    const data = await res.json();
+    genContent = data.content[0].text;
+    renderOutput(genContent);
+    document.getElementById('reviseInput').value = '';
+    showToast('포스팅이 수정되었습니다 ✓');
+  } catch(e) {
+    renderOutput(genContent);
+    showToast('수정 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 수정 적용';
+  }
+}
+
+function copyPost() {
+  const text=document.getElementById('outputArea').innerText;
+  navigator.clipboard.writeText(text).then(()=>showToast('클립보드에 복사되었습니다 ✓')).catch(()=>{const ta=Object.assign(document.createElement('textarea'),{value:text});document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('복사되었습니다 ✓');});
+}
+function downloadPost() {
+  const text=document.getElementById('outputArea').innerText;
+  const date=new Date().toISOString().slice(0,10);
+  const topic=document.getElementById('topicInput').value.slice(0,20).replace(/\s/g,'_');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'})),download:`포스팅_${date}_${topic}.txt`});
+  a.click();URL.revokeObjectURL(a.href);showToast('파일이 다운로드됩니다 ✓');
+}
+function copyPromptOnly() {
+  const topic=document.getElementById('topicInput').value.trim();
+  if(!topic){showToast('주제를 먼저 입력해주세요');return;}
+  const fmtMap={news:'뉴스 분석',policy:'정책 해설',qna:'Q&A',case:'사례 분석',summary:'핵심 요약'};
+  const reader=document.getElementById('readerSel')?.value||'all';
+  const add=document.getElementById('addInput')?.value.trim()||'';
+  navigator.clipboard.writeText(`당신은 노동법·퇴직연금·4대보험·건설업 인사노무 전문 파워블로거입니다.\n\n[주제]\n${topic}\n\n[조건]\n- 형식: ${selFmt.map(f => fmtMap[f]).filter(Boolean).join(' + ') || '뉴스 분석'}\n- 분량: 2,000자 이상\n- 추가: ${add||'없음'}`)
+    .then(()=>showToast('프롬프트 복사 ✓')).catch(()=>showToast('복사 실패'));
+}
+
+/* ══════════════════════════════════════
+   포스팅 이력
+══════════════════════════════════════ */
+function saveToHistory() {
+  if (!genContent){showToast('저장할 포스팅이 없습니다');return;}
+  const hist=JSON.parse(localStorage.getItem('nmb_history')||'[]');
+  const title = selArt?.title || document.getElementById('topicInput').value.slice(0,60);
+  hist.unshift({date:new Date().toLocaleString('ko-KR'),topic:title,content:genContent});
+  if(hist.length>30)hist.pop();
+  localStorage.setItem('nmb_history',JSON.stringify(hist));showToast('이력에 저장되었습니다 ✓');
+}
+function openHistory() {
+  const hist=JSON.parse(localStorage.getItem('nmb_history')||'[]');
+  const el=document.getElementById('histList');
+  el.innerHTML=hist.length?hist.map((h,i)=>`<div class="hist-item" onclick="loadHistory(${i})"><span class="hist-num">#${hist.length-i}</span><div style="flex:1;"><div class="hist-txt">${h.topic}</div><div class="hist-date">${h.date}</div></div></div>`).join(''):'<div style="padding:30px;text-align:center;color:var(--faint);">저장된 이력이 없습니다</div>';
+  document.getElementById('histModal').classList.add('open');
+}
+function loadHistory(idx) {
+  const hist=JSON.parse(localStorage.getItem('nmb_history')||'[]');
+  if(!hist[idx])return;
+  genContent=hist[idx].content;
+  document.getElementById('topicInput').value=hist[idx].topic;
+  renderOutput(genContent);
+  document.getElementById('actionRow').style.display='flex';
+  closeHistory();showView('post');showToast('이력을 불러왔습니다 ✓');
+}
+function clearHistory() {
+  if(!confirm('포스팅 이력을 모두 삭제하시겠습니까?'))return;
+  localStorage.removeItem('nmb_history');closeHistory();showToast('이력이 삭제되었습니다');
+}
+function closeHistory(){document.getElementById('histModal').classList.remove('open');}
+
+/* ══════════════════════════════════════
+   SEO
+══════════════════════════════════════ */
+async function genSEO() {
+  if(!genContent){showToast('먼저 포스팅을 생성해주세요');return;}
+  if(!cfg.apiKey){showToast('SEO 생성에 API 키가 필요합니다');return;}
+  showToast('SEO 메타데이터 생성 중...');
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cfg.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-4-7',max_tokens:600,messages:[{role:'user',content:`다음 블로그 포스팅의 네이버 블로그 SEO 최적화 메타데이터를 생성해주세요:\n\n${genContent.slice(0,2000)}\n\n출력 형식:\n■ 최적화 제목 (40자 이내)\n■ 메타 설명 (80자 이내)\n■ 핵심 키워드 (10개)\n■ 네이버 블로그 해시태그 (25개)\n■ 카테고리 추천`}]})});
+    const data=await res.json();
+    const seo=data.content[0].text;
+    const out=document.getElementById('outputArea');
+    out.innerHTML+=`<hr style="border:none;border-top:2px solid var(--blue-mid);margin:18px 0;"><h3 style="font-size:14px;font-weight:800;color:var(--blue-mid);margin-bottom:8px;">🔍 SEO 메타데이터</h3><div style="white-space:pre-wrap;font-size:13.5px;">${seo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+    showToast('SEO 메타데이터가 추가되었습니다 ✓');
+  } catch(e){showToast('SEO 생성 실패: '+e.message);}
+}
+
+/* ══════════════════════════════════════
+   자동 새로고침
+══════════════════════════════════════ */
+function startAutoRefresh() {
+  if(refreshTimer)clearInterval(refreshTimer);
+  if(cfg.refresh>0)refreshTimer=setInterval(refreshAllNews,cfg.refresh);
+}
+
+/* ══════════════════════════════════════
+   모달 오버레이 닫기
+══════════════════════════════════════ */
+['settingsModal','histModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)document.getElementById(id).classList.remove('open');});
+});
+
+/* ══════════════════════════════════════
+   토스트
+══════════════════════════════════════ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* ══════════════════════════════════════
+   유틸
+══════════════════════════════════════ */
+function extractTopKeywords(titles, topN = 5) {
+  const stopWords = new Set([
+    '및','등','의','을','를','이','가','은','는','에','로','와','과','에서','으로',
+    '에게','한','이후','위해','통해','대한','위한','따른','관련','현재','지난',
+    '올해','최근','해당','이번','앞서','이에','또한','하지만','그러나','따라',
+    '오는','있는','있어','하는','되는','받는','없는','같은','더욱','더','가장',
+    '밝혀','말해','나타나','확인','발표','예정','계획','추진','논의','결정',
+    '대해','하며','하고','이고','이며','라고','으로서','에도','에는','까지',
+    '부터','만에','만큼','처럼','보다','조차','마저','라도','으로도','이라',
+    '없이','않고','된다','한다','있다','된다','한다','위해서','대해서','통해서',
+  ]);
+  const counts = {};
+  titles.forEach(title => {
+    const words = title.replace(/[^가-힣a-zA-Z0-9\s]/g, ' ').split(/\s+/);
+    words.forEach(word => {
+      if (word.length < 2) return;
+      if (stopWords.has(word)) return;
+      counts[word] = (counts[word] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([word, count]) => ({word, count}));
+}
+
+function isRecentArticle(pubDate) {
+  if (!pubDate) return false;
+  try {
+    const d = new Date(pubDate);
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    return d >= yesterdayStart && d < new Date(todayStart.getTime() + 86400000);
+  } catch { return false; }
+}
+
+function cleanHtml(s){return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\s*-\s*[\w가-힣\s\.]+$/,'').trim();}
+function parseSrc(title){const m=title.match(/-\s*([\w가-힣\s]+)$/);return m?m[1].trim():'';}
+function fmtDate(s){
+  if(!s)return '';
+  try{const d=new Date(s),now=new Date(),m=Math.floor((now-d)/60000);if(m<60)return `${m}분 전`;const h=Math.floor(m/60);if(h<24)return `${h}시간 전`;return d.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'});}catch{return '';}
+}
+</script>
+</body>
+</html>
